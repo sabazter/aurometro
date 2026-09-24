@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum ParticipationMode {
+  SPECTATOR
+  CONTROLLED
+  FULL
+}
+
+enum Theme {
+  LIGHT
+  DARK
+}
+
+enum TransactionType {
+  POSITIVE
+  NEGATIVE
+}
+
+model User {
+  id                   String            @id @default(uuid())
+  email                String            @unique
+  password             String
+  firstName            String
+  lastName             String
+  nickname             String?
+  avatarUrl            String?
+  year                 Int
+  section              String
+  role                 Role              @default(STUDENT)
+  isFrozen             Boolean           @default(false)
+  emailVerified        Boolean           @default(false)
+  verificationToken    String?           @unique
+  disclaimerAcceptedAt DateTime?
+  onboardingCompleted  Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  preferences          UserPreferences?
+  sentTransactions     AuraTransaction[] @relation("SentTransactions")
+  receivedTransactions AuraTransaction[] @relation("ReceivedTransactions")
+}
+
+model UserPreferences {
+  id                String            @id @default(uuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participationMode ParticipationMode @default(SPECTATOR)
+  showScore         Boolean           @default(false)
+  showInRanking     Boolean           @default(false)
+  theme             Theme             @default(LIGHT)
+  updatedAt         DateTime          @updatedAt
+}
+
+model AuraTransaction {
+  id         String          @id @default(uuid())
+  fromUserId String
+  fromUser   User            @relation("SentTransactions", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User            @relation("ReceivedTransactions", fields: [toUserId], references: [id], onDelete: Cascade)
+  points     Int
+  type       TransactionType
+  reason     String?         @db.VarChar(140)
+  createdAt  DateTime        @default(now())
+
+  @@index([fromUserId, toUserId, createdAt])
+}

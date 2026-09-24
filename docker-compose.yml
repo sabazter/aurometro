@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: aurometro_db
+    restart: always
+    environment:
+      POSTGRES_USER: aurometro
+      POSTGRES_PASSWORD: aurometro_dev
+      POSTGRES_DB: aurometro
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

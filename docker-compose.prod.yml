@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aurometro_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aurometro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aurometro_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-aurometro}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aurometro}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: aurometro_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aurometro}:${POSTGRES_PASSWORD:-aurometro_dev}@db:5432/${POSTGRES_DB:-aurometro}
+      JWT_SECRET: ${JWT_SECRET:-aurometro-jwt-secret-prod-key}
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      PORT: 3001
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: aurometro_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
