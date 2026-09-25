@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 
 // Import Pages
 import Login from './pages/Login';
@@ -16,6 +17,7 @@ import PointsSection from './pages/PointsSection';
 import PointsStudents from './pages/PointsStudents';
 import Ranking from './pages/Ranking';
 import Settings from './pages/Settings';
+import AdminPanel from './pages/AdminPanel';
 
 const App: React.FC = () => {
   return (
@@ -36,6 +38,10 @@ const App: React.FC = () => {
                 <Route path="/points/:year/:section" element={<PointsStudents />} />
                 <Route path="/ranking" element={<Ranking />} />
                 <Route path="/settings" element={<Settings />} />
+                
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin" element={<AdminPanel />} />
+                </Route>
               </Route>
             </Route>
             

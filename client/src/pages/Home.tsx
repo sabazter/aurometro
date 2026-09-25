@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import client from '../api/client';
 import { Card } from '../components/ui/Card';
-import { Zap, Trophy, Settings as SettingsIcon } from 'lucide-react';
+import { Zap, Trophy, Settings as SettingsIcon, ShieldAlert } from 'lucide-react';
 import { Budget } from '../types';
 
 const Home: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [budget, setBudget] = useState<Budget | null>(null);
   const [auraScore, setAuraScore] = useState<number>(0);
 
@@ -91,6 +91,20 @@ const Home: React.FC = () => {
             <p className="text-sm opacity-70">Ajusta tu experiencia.</p>
           </Card>
         </Link>
+
+        {isAdmin && (
+          <Link to="/admin" className="md:col-span-3">
+            <Card className="hover:border-amber-500/50 hover:shadow-lg transition-all cursor-pointer group bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-purple-500/10 border-amber-500/30 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                <ShieldAlert size={26} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400">👑 Panel de Control Admin</h3>
+                <p className="text-sm opacity-80">Gestión de usuarios, validaciones manuales de correo, bloqueos y auditoría.</p>
+              </div>
+            </Card>
+          </Link>
+        )}
       </div>
     </div>
   );

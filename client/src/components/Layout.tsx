@@ -2,10 +2,10 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Moon, Sun, Home, User, Settings, ArrowLeft, Zap } from 'lucide-react';
+import { Moon, Sun, Home, User, Settings, ArrowLeft, Zap, ShieldAlert } from 'lucide-react';
 
 export const Layout: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,6 +47,11 @@ export const Layout: React.FC = () => {
               <Link to="/settings" className={`text-sm font-medium transition-colors ${location.pathname === '/settings' ? 'text-purple-600 dark:text-purple-400 font-bold' : 'opacity-70 hover:opacity-100'}`}>
                 Ajustes
               </Link>
+              {isAdmin && (
+                <Link to="/admin" className={`text-sm font-bold transition-colors ${location.pathname === '/admin' ? 'text-amber-500' : 'text-amber-600 dark:text-amber-400 hover:opacity-100'}`}>
+                  👑 Admin
+                </Link>
+              )}
             </nav>
           )}
 
@@ -92,6 +97,12 @@ export const Layout: React.FC = () => {
             <Settings size={20} />
             <span className="text-[10px]">Ajustes</span>
           </Link>
+          {isAdmin && (
+            <Link to="/admin" className={`flex flex-col items-center gap-1 ${location.pathname === '/admin' ? 'text-amber-500 font-bold' : 'text-amber-600 dark:text-amber-400 opacity-90'}`}>
+              <ShieldAlert size={20} />
+              <span className="text-[10px]">Admin</span>
+            </Link>
+          )}
         </nav>
       )}
     </div>
