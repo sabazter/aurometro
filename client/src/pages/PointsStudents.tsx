@@ -41,12 +41,13 @@ const PointsStudents: React.FC = () => {
 
   const handleGivePoint = async (type: 'POSITIVE' | 'NEGATIVE') => {
     if (!selectedStudent) return;
+    if (!reason.trim()) return; // extra guard, button should already be disabled
     setGiving(true);
     try {
       await client.post('/aura/give', {
         toUserId: selectedStudent.id,
         type,
-        reason
+        reason: reason.trim()
       });
       
       setToast(`Punto ${type === 'POSITIVE' ? 'positivo' : 'negativo'} enviado a ${selectedStudent.firstName}`);
@@ -64,6 +65,9 @@ const PointsStudents: React.FC = () => {
       setGiving(false);
     }
   };
+
+  const isReasonEmpty = reason.trim().length === 0;
+  const noPoints = budget ? budget.dailyRemaining <= 0 : false;
 
   if (loading) {
     return <div className="text-center py-10">Cargando...</div>;
@@ -91,7 +95,7 @@ const PointsStudents: React.FC = () => {
           <Card 
             key={student.id} 
             className="flex items-center gap-4 p-4 cursor-pointer hover:border-purple-500/50 hover:shadow-lg transition-all"
-            onClick={() => setSelectedStudent(student)}
+            onClick={() => { setSelectedStudent(student); setReason(''); }}
           >
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-md">
               {student.firstName[0]}{student.lastName[0]}
@@ -107,37 +111,48 @@ const PointsStudents: React.FC = () => {
         )}
       </div>
 
-      <Modal isOpen={!!selectedStudent} onClose={() => setSelectedStudent(null)}>
+      <Modal isOpen={!!selectedStudent} onClose={() => { setSelectedStudent(null); setReason(''); }}>
         {selectedStudent && (
           <div className="text-center">
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4 shadow-lg">
               {selectedStudent.firstName[0]}{selectedStudent.lastName[0]}
             </div>
             <h2 className="text-2xl font-bold mb-1">{selectedStudent.firstName} {selectedStudent.lastName}</h2>
-            {selectedStudent.nickname && <p className="opacity-70 mb-6">"{selectedStudent.nickname}"</p>}
+            {selectedStudent.nickname && <p className="opacity-70 mb-4">"{selectedStudent.nickname}"</p>}
 
             {budget && (
-              <div className="flex justify-center gap-4 text-sm font-medium mb-6 bg-slate-100 dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10">
-                <span className="text-emerald-600 dark:text-green-400 font-bold">+{budget.positiveAvailable} disponibles</span>
-                <span className="opacity-30">|</span>
-                <span className="text-rose-600 dark:text-red-400 font-bold">-{budget.negativeAvailable} disponibles</span>
+              <div className="flex justify-center gap-4 text-sm font-medium mb-4 bg-slate-100 dark:bg-white/5 p-3 rounded-xl border border-slate-200 dark:border-white/10">
+                <span className={`font-bold ${budget.dailyRemaining > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-red-400'}`}>
+                  {budget.dailyRemaining}/{budget.dailyLimit ?? 3} puntos disponibles hoy
+                </span>
               </div>
             )}
 
-            <textarea
-              className="w-full bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 rounded-xl p-3 outline-none focus:border-purple-500 transition-colors mb-6 resize-none"
-              placeholder="Razón (opcional, máx 140 carácteres)"
-              maxLength={140}
-              rows={2}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
+            <div className="mb-2 text-left">
+              <label className="text-xs font-semibold opacity-70 mb-1 block">
+                Razón <span className="text-rose-500">*</span> <span className="opacity-60 font-normal">(obligatoria, máx 140 caracteres)</span>
+              </label>
+              <textarea
+                className="w-full bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 rounded-xl p-3 outline-none focus:border-purple-500 transition-colors resize-none"
+                placeholder="¿Por qué le das o quitas aura?"
+                maxLength={140}
+                rows={3}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                autoFocus
+              />
+              <div className="text-right text-xs opacity-50 mt-1">{reason.length}/140</div>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {isReasonEmpty && (
+              <p className="text-rose-500 text-xs mb-3 text-left">Debes escribir una razón para continuar.</p>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 mt-2">
               <Button 
                 variant="success" 
                 onClick={() => handleGivePoint('POSITIVE')}
-                disabled={giving || (budget ? budget.positiveAvailable <= 0 : true)}
+                disabled={giving || isReasonEmpty || noPoints}
                 className="py-4 text-lg"
               >
                 ✨ +100 Aura
@@ -145,12 +160,16 @@ const PointsStudents: React.FC = () => {
               <Button 
                 variant="danger" 
                 onClick={() => handleGivePoint('NEGATIVE')}
-                disabled={giving || (budget ? budget.negativeAvailable <= 0 : true)}
+                disabled={giving || isReasonEmpty || noPoints}
                 className="py-4 text-lg"
               >
                 💀 -100 Aura
               </Button>
             </div>
+
+            {noPoints && (
+              <p className="text-amber-500 text-xs mt-3 font-semibold">Has usado todos tus puntos de hoy. Vuelve mañana.</p>
+            )}
           </div>
         )}
       </Modal>

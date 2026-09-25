@@ -34,7 +34,7 @@ export const getRanking = async (filters: { year?: number; section?: string; sor
     const aura = totalPoints * 100;
 
     return {
-      id: user.id,
+      userId: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       nickname: user.nickname,

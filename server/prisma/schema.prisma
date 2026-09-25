@@ -53,14 +53,15 @@ model User {
 }
 
 model UserPreferences {
-  id                String            @id @default(uuid())
-  userId            String            @unique
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  participationMode ParticipationMode @default(SPECTATOR)
-  showScore         Boolean           @default(false)
-  showInRanking     Boolean           @default(false)
-  theme             Theme             @default(LIGHT)
-  updatedAt         DateTime          @updatedAt
+  id                          String            @id @default(uuid())
+  userId                      String            @unique
+  user                        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participationMode           ParticipationMode @default(SPECTATOR)
+  showScore                   Boolean           @default(false)
+  showInRanking               Boolean           @default(false)
+  theme                       Theme             @default(LIGHT)
+  lastParticipationModeChange DateTime?
+  updatedAt                   DateTime          @updatedAt
 }
 
 model AuraTransaction {

@@ -2,6 +2,16 @@ import React, { useEffect, useState } from 'react';
 import client from '../api/client';
 import { RankingEntry } from '../types';
 import { Card } from '../components/ui/Card';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+interface HistoryItem {
+  id: string;
+  points: number;
+  type: 'POSITIVE' | 'NEGATIVE';
+  reason: string | null;
+  createdAt: string;
+  from: { firstName: string; lastName: string; nickname: string | null };
+}
 
 const Ranking: React.FC = () => {
   const [entries, setEntries] = useState<RankingEntry[]>([]);
@@ -11,8 +21,14 @@ const Ranking: React.FC = () => {
   const [sectionFilter, setSectionFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
+  // History state
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [history, setHistory] = useState<Record<string, HistoryItem[]>>({});
+  const [loadingHistory, setLoadingHistory] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchRanking = async () => {
+      setLoading(true);
       try {
         const params = new URLSearchParams();
         if (yearFilter !== 'all') params.set('year', yearFilter);
@@ -20,6 +36,7 @@ const Ranking: React.FC = () => {
         params.set('sort', sortOrder);
         const res = await client.get(`/ranking?${params.toString()}`);
         setEntries(res.data.data || []);
+        setExpandedUserId(null);
       } catch (error) {
         console.error(error);
       } finally {
@@ -28,6 +45,26 @@ const Ranking: React.FC = () => {
     };
     fetchRanking();
   }, [yearFilter, sectionFilter, sortOrder]);
+
+  const toggleHistory = async (userId: string) => {
+    if (expandedUserId === userId) {
+      setExpandedUserId(null);
+      return;
+    }
+    setExpandedUserId(userId);
+    if (history[userId]) return; // already cached
+
+    setLoadingHistory(userId);
+    try {
+      const res = await client.get(`/ranking/${userId}/history`);
+      setHistory(prev => ({ ...prev, [userId]: res.data.data || [] }));
+    } catch (error) {
+      console.error(error);
+      setHistory(prev => ({ ...prev, [userId]: [] }));
+    } finally {
+      setLoadingHistory(null);
+    }
+  };
 
   const getPositionBadge = (index: number) => {
     if (sortOrder === 'asc') return <span className="font-bold opacity-50 w-6 text-center">{index + 1}</span>;
@@ -87,36 +124,78 @@ const Ranking: React.FC = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {entries.map((entry, index) => (
-            <Card key={index} className="flex items-center gap-4 p-4 hover:scale-[1.01] transition-transform">
-              {getPositionBadge(index)}
-              
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md">
-                {entry.avatarUrl ? (
-                  <img src={entry.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  `${entry.firstName[0]}${entry.lastName[0]}`
-                )}
-              </div>
-              
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2">
-                  <h3 className="font-bold">{entry.firstName} {entry.lastName}</h3>
-                  {entry.nickname && <span className="text-xs opacity-70">"{entry.nickname}"</span>}
+            <Card key={entry.userId ?? index} className="overflow-hidden">
+              {/* Main row */}
+              <div className="flex items-center gap-4 p-4">
+                {getPositionBadge(index)}
+                
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center text-white font-bold flex-shrink-0 shadow-md">
+                  {entry.avatarUrl ? (
+                    <img src={entry.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    `${entry.firstName[0]}${entry.lastName[0]}`
+                  )}
                 </div>
-                <div className="text-xs opacity-60 mt-0.5">
-                  {entry.year}º Año - Sección {entry.section}
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-bold truncate">{entry.firstName} {entry.lastName}</h3>
+                    {entry.nickname && <span className="text-xs opacity-70 truncate">"{entry.nickname}"</span>}
+                  </div>
+                  <div className="text-xs opacity-60 mt-0.5">
+                    {entry.year}º Año - Sección {entry.section}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    {entry.aura !== null ? (
+                      <div className={`text-xl font-bold ${entry.aura >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-red-400'}`}>
+                        {entry.aura > 0 ? '+' : ''}{entry.aura}
+                      </div>
+                    ) : (
+                      <div className="text-sm italic opacity-50">Oculto</div>
+                    )}
+                  </div>
+
+                  {/* History toggle button */}
+                  <button
+                    onClick={() => toggleHistory(entry.userId!)}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-purple-500/20 hover:text-purple-500 transition-colors flex-shrink-0"
+                    title="Ver historial de razones"
+                  >
+                    {expandedUserId === entry.userId ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
                 </div>
               </div>
 
-              <div className="text-right">
-                {entry.aura !== null ? (
-                  <div className={`text-xl font-bold ${entry.aura >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-red-400'}`}>
-                    {entry.aura > 0 ? '+' : ''}{entry.aura}
-                  </div>
-                ) : (
-                  <div className="text-sm italic opacity-50">Oculto</div>
-                )}
-              </div>
+              {/* Expandable history panel */}
+              {expandedUserId === entry.userId && (
+                <div className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-3">
+                  <h4 className="text-xs font-bold opacity-60 uppercase tracking-wider mb-3">Historial de Aura</h4>
+                  {loadingHistory === entry.userId ? (
+                    <div className="text-center text-sm opacity-50 py-3">Cargando...</div>
+                  ) : (history[entry.userId!] ?? []).length === 0 ? (
+                    <div className="text-center text-sm opacity-50 py-3">Sin historial disponible.</div>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                      {(history[entry.userId!] ?? []).map(item => (
+                        <div key={item.id} className="flex items-start gap-3 text-sm">
+                          <span className={`font-bold text-base flex-shrink-0 w-16 text-right ${item.type === 'POSITIVE' ? 'text-emerald-600 dark:text-green-400' : 'text-rose-600 dark:text-red-400'}`}>
+                            {item.points > 0 ? '+' : ''}{item.points}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="opacity-90 break-words">{item.reason || <em className="opacity-50">Sin razón</em>}</p>
+                            <p className="text-xs opacity-50 mt-0.5">
+                              De: {item.from.nickname ? `"${item.from.nickname}"` : `${item.from.firstName} ${item.from.lastName}`} · {new Date(item.createdAt).toLocaleDateString('es-ES')}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
           ))}
           {entries.length === 0 && (

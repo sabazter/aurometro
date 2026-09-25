@@ -272,4 +272,17 @@ router.get('/transactions', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/reset-all - Mass reset: delete ALL aura transactions
+router.delete('/reset-all', async (req: AuthRequest, res) => {
+  try {
+    const deleted = await prisma.auraTransaction.deleteMany({});
+    res.json({
+      success: true,
+      data: { message: `Reseteo masivo completado. ${deleted.count} transacciones eliminadas.`, count: deleted.count },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

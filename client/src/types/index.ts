@@ -24,9 +24,9 @@ export interface User {
 export interface Budget {
   positiveAvailable: number;
   negativeAvailable: number;
-  positiveUsed: number;
-  negativeUsed: number;
-  weekStart: string;
+  dailyRemaining: number;
+  usedToday: number;
+  dailyLimit: number;
 }
 
 export interface StudentListItem {
@@ -39,6 +39,7 @@ export interface StudentListItem {
 }
 
 export interface RankingEntry {
+  userId: string;
   position: number;
   firstName: string;
   lastName: string;
@@ -48,3 +49,4 @@ export interface RankingEntry {
   year: number;
   section: string;
 }
+

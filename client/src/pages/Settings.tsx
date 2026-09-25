@@ -15,12 +15,14 @@ const Settings: React.FC = () => {
   const [nickname, setNickname] = useState(user?.nickname || '');
   const [savingNick, setSavingNick] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [cooldownError, setCooldownError] = useState('');
 
   if (!user) return null;
 
   const prefs = user.preferences || { participationMode: 'SPECTATOR', showScore: false, showInRanking: false };
 
   const handleModeChange = async (mode: 'SPECTATOR' | 'CONTROLLED' | 'FULL') => {
+    setCooldownError('');
     let newPrefs = { participationMode: mode, showScore: prefs.showScore, showInRanking: prefs.showInRanking };
     if (mode === 'SPECTATOR' || mode === 'CONTROLLED') {
       newPrefs.showScore = false;
@@ -29,7 +31,12 @@ const Settings: React.FC = () => {
       newPrefs.showScore = true;
       newPrefs.showInRanking = true;
     }
-    await updatePreferences(newPrefs);
+    try {
+      await updatePreferences(newPrefs);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || '';
+      if (msg) setCooldownError(msg);
+    }
   };
 
   const handleUpdateNickname = async () => {
@@ -99,6 +106,11 @@ const Settings: React.FC = () => {
             {prefs.participationMode === 'CONTROLLED' && 'Participas, pero mantienes tu información privada.'}
             {prefs.participationMode === 'FULL' && 'Experiencia completa. Puntaje público y ranking.'}
           </p>
+          {cooldownError && (
+            <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-sm font-medium">
+              ⏳ {cooldownError}
+            </div>
+          )}
         </Card>
       </section>
 

@@ -6,6 +6,11 @@ export const givePoint = async (fromUserId: string, toUserId: string, type: 'POS
     throw new Error('No puedes darte puntos a ti mismo');
   }
 
+  // Reason is mandatory
+  if (!reason || reason.trim().length === 0) {
+    throw new Error('La razón es obligatoria para dar o quitar aura');
+  }
+
   const [fromUser, toUser] = await Promise.all([
     prisma.user.findUnique({ where: { id: fromUserId }, include: { preferences: true } }),
     prisma.user.findUnique({ where: { id: toUserId }, include: { preferences: true } }),
@@ -35,7 +40,7 @@ export const givePoint = async (fromUserId: string, toUserId: string, type: 'POS
     throw new Error('El usuario destino es espectador y no puede recibir puntos');
   }
 
-  // Cooldown check: Last 24 hours for the same type
+  // Cooldown check: same user pair in last 24 hours for same type
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const recentTransaction = await prisma.auraTransaction.findFirst({
     where: {
@@ -52,13 +57,10 @@ export const givePoint = async (fromUserId: string, toUserId: string, type: 'POS
     throw new Error(`Ya diste un punto ${type === 'POSITIVE' ? 'positivo' : 'negativo'} a este usuario en las últimas 24 horas`);
   }
 
-  // Budget check
+  // Daily budget check (combined pool)
   const budget = await getBudget(fromUserId);
-  if (type === 'POSITIVE' && budget.positiveAvailable <= 0) {
-    throw new Error('No tienes puntos positivos disponibles esta semana');
-  }
-  if (type === 'NEGATIVE' && budget.negativeAvailable <= 0) {
-    throw new Error('No tienes puntos negativos disponibles esta semana');
+  if (budget.dailyRemaining <= 0) {
+    throw new Error(`Has alcanzado el límite de ${budget.dailyLimit} puntos por día. Vuelve mañana.`);
   }
 
   const points = type === 'POSITIVE' ? 1 : -1;
@@ -69,7 +71,7 @@ export const givePoint = async (fromUserId: string, toUserId: string, type: 'POS
       toUserId,
       type,
       points,
-      reason: reason?.slice(0, 140),
+      reason: reason.trim().slice(0, 140),
     },
   });
 

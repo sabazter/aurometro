@@ -35,7 +35,7 @@ interface Transaction {
 }
 
 const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'users' | 'transactions'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'transactions' | 'reset'>('users');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
@@ -84,6 +84,11 @@ const AdminPanel: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadingTx, setLoadingTx] = useState(false);
 
+  // Mass reset state
+  const [resetAllModalOpen, setResetAllModalOpen] = useState(false);
+  const [resetAllLoading, setResetAllLoading] = useState(false);
+  const [resetAllResult, setResetAllResult] = useState('');
+
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
@@ -118,10 +123,26 @@ const AdminPanel: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers();
-    } else {
+    } else if (activeTab === 'transactions') {
       fetchTransactions();
     }
   }, [activeTab, search, yearFilter, sectionFilter, roleFilter, verifiedFilter]);
+
+  const handleResetAll = async () => {
+    setResetAllLoading(true);
+    try {
+      const res = await client.delete('/admin/reset-all');
+      const msg = res.data.data?.message || 'Reseteo completado';
+      setResetAllResult(msg);
+      setResetAllModalOpen(false);
+      showNotification(msg);
+      fetchUsers();
+    } catch (err: any) {
+      setResetAllResult(err.response?.data?.error || 'Error al resetear');
+    } finally {
+      setResetAllLoading(false);
+    }
+  };
 
   const showNotification = (msg: string) => {
     setActionSuccess(msg);
@@ -297,6 +318,18 @@ const AdminPanel: React.FC = () => {
         >
           <History size={18} />
           <span>Historial de Transacciones</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reset')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeTab === 'reset'
+              ? 'bg-rose-600 text-white shadow-md'
+              : 'hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 opacity-70'
+          }`}
+        >
+          <ShieldAlert size={18} />
+          <span>Reseteo Masivo</span>
         </button>
       </div>
 
@@ -510,6 +543,71 @@ const AdminPanel: React.FC = () => {
           )}
         </Card>
       )}
+
+      {activeTab === 'reset' && (
+        <div className="space-y-6">
+          <Card className="p-6 border-rose-500/30 dark:border-rose-500/20">
+            <div className="flex items-start gap-4">
+              <div className="text-4xl">⚠️</div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-rose-600 dark:text-rose-400 mb-2">Reseteo Masivo de Aura</h2>
+                <p className="text-sm opacity-80 mb-4">
+                  Esta acción eliminará <strong>todas</strong> las transacciones de aura de <strong>todos</strong> los usuarios.
+                  Los usuarios, preferencias y cuentas se mantendrán intactos, solo se borran los puntos.
+                  Esta acción <strong>no se puede deshacer</strong>.
+                </p>
+                <ul className="text-sm opacity-70 mb-6 space-y-1 list-disc list-inside">
+                  <li>Todos los puntos positivos y negativos serán eliminados</li>
+                  <li>El aura de todos los usuarios quedará en 0</li>
+                  <li>Los usuarios y su configuración no se ven afectados</li>
+                  <li>El ranking quedará vacío hasta que se vuelvan a dar puntos</li>
+                </ul>
+                {resetAllResult && (
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold">
+                    ✅ {resetAllResult}
+                  </div>
+                )}
+                <Button
+                  variant="danger"
+                  onClick={() => { setResetAllResult(''); setResetAllModalOpen(true); }}
+                  className="flex items-center gap-2"
+                >
+                  <ShieldAlert size={18} />
+                  Iniciar Reseteo Masivo
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal: Reseteo Masivo Confirmación */}
+      <Modal isOpen={resetAllModalOpen} onClose={() => setResetAllModalOpen(false)} title="☢️ Confirmar Reseteo Masivo">
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30">
+            <p className="text-sm font-bold text-rose-600 dark:text-rose-400 mb-2">
+              ADVERTENCIA: Esto no se puede deshacer
+            </p>
+            <p className="text-sm opacity-80">
+              Estás a punto de eliminar <strong>TODAS</strong> las transacciones de aura del sistema.
+              Todos los usuarios quedarán con 0 aura. ¿Estás absolutamente seguro?
+            </p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button variant="ghost" onClick={() => setResetAllModalOpen(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleResetAll}
+              loading={resetAllLoading}
+              className="flex-1"
+            >
+              Sí, Borrar Todo
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Modal: Crear Usuario */}
       <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="➕ Crear Nuevo Usuario">
