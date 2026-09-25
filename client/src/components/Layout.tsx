@@ -2,10 +2,10 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Moon, Sun, Home, User, Settings, ArrowLeft, Zap, ShieldAlert } from 'lucide-react';
+import { Moon, Sun, Home, User, Settings, ArrowLeft, Zap, ShieldAlert, LogOut } from 'lucide-react';
 
 export const Layout: React.FC = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,7 +55,7 @@ export const Layout: React.FC = () => {
             </nav>
           )}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
@@ -63,12 +63,24 @@ export const Layout: React.FC = () => {
             >
               {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-slate-700" />}
             </button>
+
             {user && (
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                  {user.firstName[0]}
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    {user.firstName[0]}
+                  </div>
                 </div>
-              </div>
+
+                <button
+                  onClick={logout}
+                  className="p-2.5 sm:px-3 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors flex items-center gap-1.5 text-xs font-semibold border border-rose-500/20"
+                  title="Cerrar sesión"
+                >
+                  <LogOut size={18} />
+                  <span className="hidden sm:inline">Salir</span>
+                </button>
+              </>
             )}
           </div>
         </div>
