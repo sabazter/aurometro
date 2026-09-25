@@ -351,6 +351,8 @@ Después del registro, el alumno pasa por un wizard de preferencias que le expli
      - Creada la ruta protegida exclusivamente para administradores (`/admin`).
      - Vista con 2 pestañas principales: **Gestión de Usuarios** e **Historial de Transacciones**.
      - Botón directo **"👑 Panel Admin"** visible en el menú principal (`Layout.tsx`) y tarjeta destacada en la pantalla de inicio (`Home.tsx`) solo para administradores.
+  3. **Botón Directo de Cerrar Sesión (`Layout.tsx`)**:
+     - Agregado botón explícito **"🚪 Salir"** en el encabezado superior del Layout (visible siempre en escritorio y dispositivos móviles).
 - **Próximos pasos**:
   1. Abrir `http://localhost:5174/login` e ingresar con el usuario admin (`admin@csam.edu` o `csamtic2024@gmail.com` / `clave123`).
   2. Probar la navegación al panel admin desde la tarjeta o el menú superior.
