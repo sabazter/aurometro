@@ -335,3 +335,24 @@ Después del registro, el alumno pasa por un wizard de preferencias que le expli
   2. Probar cambio entre modo claro ☀️ y oscuro 🌙 desde la barra superior.
   3. Probar los botones de retorno "← Volver".
   4. Comprobar que los administradores no aparecen en las listas ni en el ranking.
+
+## 📅 Sesión 6 — 2026-09-25 (Panel de Control de Administrador Completo)
+- **Estado**: ✅ Panel de Administración implementado y verificado.
+- **Acciones**:
+  1. **Endpoints de Administración (`admin.routes.ts`)**:
+     - `GET /api/admin/users`: Listado de usuarios con buscador (nombre, apodo, correo), filtros por año (1-5), sección (A-D), rol (STUDENT/ADMIN), estado de correo (Verificado/Pendiente) y cálculo de aura actual.
+     - `POST /api/admin/users`: Creación manual de usuarios desde el panel admin (soporta asignación de rol y verificación directa de correo).
+     - `PUT /api/admin/users/:id`: Edición de perfil, cambio de rol, actualización de contraseña y datos personales.
+     - `PUT /api/admin/users/:id/verify-email`: Validación/desmarcado manual instantáneo de correo electrónico.
+     - `PUT /api/admin/users/:id/freeze`: Congelamiento/descongelamiento de cuenta.
+     - `PUT /api/admin/users/:id/reset-aura`: Reseteo de historial de puntos de aura recibidos a 0.
+     - `DELETE /api/admin/users/:id`: Eliminación permanente de usuario (impidiendo autoborrado de la cuenta admin actual).
+  2. **Vistas e Interfaz (`AdminPanel.tsx` & `AdminRoute.tsx`)**:
+     - Creada la ruta protegida exclusivamente para administradores (`/admin`).
+     - Vista con 2 pestañas principales: **Gestión de Usuarios** e **Historial de Transacciones**.
+     - Botón directo **"👑 Panel Admin"** visible en el menú principal (`Layout.tsx`) y tarjeta destacada en la pantalla de inicio (`Home.tsx`) solo para administradores.
+- **Próximos pasos**:
+  1. Abrir `http://localhost:5174/login` e ingresar con el usuario admin (`admin@csam.edu` o `csamtic2024@gmail.com` / `clave123`).
+  2. Probar la navegación al panel admin desde la tarjeta o el menú superior.
+  3. Probar la validación manual de correos, edición, creación y eliminación de usuarios.
+
